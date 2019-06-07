@@ -84,7 +84,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN mkdir -p $SRC_DIR $PHP_INI_DIR/conf.d
 RUN set -xe \
   && for key in $GPG_KEYS; do \
-    gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+    ( gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" \
+      || gpg --keyserver keyserver.pgp.com --recv-keys "$key" \
+      || gpg --keyserver keyserver.ubuntu.com --recv-keys "$key" \
+      || gpg --keyserver pgp.mit.edu --recv-keys "$key" ); \
   done
 
 # compile openssl, otherwise --with-openssl won't work
@@ -126,10 +129,7 @@ RUN set -x \
 			--with-curl \
 			--with-fpm-group=www-data \
 			--with-fpm-user=www-data \
-			--with-freetype-dir=/usr/include \
 			--with-gd \
-			--with-imap \
-			--with-imap-ssl \
 			--with-jpeg-dir=/usr/lib/x86_64-linux-gnu \
 			--with-kerberos \
 			--with-mhash \
@@ -153,11 +153,14 @@ RUN set -x \
 COPY docker-php-* /usr/local/bin/
 
 # install php-redis
-RUN curl -SL "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -o redis-${PHPREDIS_VER}.tgz \
+RUN chmod +x /usr/local/bin/docker-php-*  \
+  && ls -a -l  /usr/local/bin \
+  && curl -SL "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -o redis-${PHPREDIS_VER}.tgz \
   && tar xzf redis-${PHPREDIS_VER}.tgz \
-  && mv redis-${PHPREDIS_VER} /usr/src/php/ext/redis \
-  && rm -rf redis-${PHPREDIS_VER}* \
-  && /usr/local/bin/docker-php-ext-install redis
+  && mv redis-${PHPREDIS_VER} ${SRC_DIR}/ext/redis \
+  && rm -rf redis-${PHPREDIS_VER}*
+
+RUN set -ex ./usr/local/bin/docker-php-ext-install redis
 
 RUN set -ex \
   && cd /usr/local/etc \
