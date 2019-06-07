@@ -5,4 +5,5 @@ php53fpm-docker
 ```shell
 
 sudo docker build -t myimg .
+sudo docker run --rm -it myimg:latest php -r "phpinfo();";
 ```

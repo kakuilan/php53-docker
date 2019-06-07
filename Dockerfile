@@ -8,6 +8,10 @@ ENV PHP_VERSION 5.3.29
 ENV PHP_INI_DIR /usr/local/etc/php
 ENV PHPREDIS_VER 4.2.0
 
+COPY docker-php-* /usr/local/bin/
+RUN mkdir -p $SRC_DIR $PHP_INI_DIR/conf.d \
+  && chmod +x /usr/local/bin/docker-php-* \
+
 # install deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	autoconf \
@@ -80,8 +84,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -r /var/lib/apt/lists/*
 
-
-RUN mkdir -p $SRC_DIR $PHP_INI_DIR/conf.d
 RUN set -xe \
   && for key in $GPG_KEYS; do \
     ( gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" \
@@ -150,12 +152,8 @@ RUN set -x \
       && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false $buildDeps \
       && make clean
 
-COPY docker-php-* /usr/local/bin/
-
 # install php-redis
-RUN chmod +x /usr/local/bin/docker-php-*  \
-  && ls -a -l  /usr/local/bin \
-  && curl -SL "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -o redis-${PHPREDIS_VER}.tgz \
+RUN curl -SL "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -o redis-${PHPREDIS_VER}.tgz \
   && tar xzf redis-${PHPREDIS_VER}.tgz \
   && mv redis-${PHPREDIS_VER} ${SRC_DIR}/ext/redis \
   && rm -rf redis-${PHPREDIS_VER}* \
@@ -165,8 +163,6 @@ RUN chmod +x /usr/local/bin/docker-php-*  \
   && make clean \
   && make && make install \
   && echo "extension=redis.so" > ${PHP_INI_DIR}/conf.d/docker-php-ext-redis.ini
-
-#RUN set -ex ./usr/local/bin/docker-php-ext-install redis
 
 RUN set -ex \
   && cd /usr/local/etc \
