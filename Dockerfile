@@ -158,9 +158,15 @@ RUN chmod +x /usr/local/bin/docker-php-*  \
   && curl -SL "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -o redis-${PHPREDIS_VER}.tgz \
   && tar xzf redis-${PHPREDIS_VER}.tgz \
   && mv redis-${PHPREDIS_VER} ${SRC_DIR}/ext/redis \
-  && rm -rf redis-${PHPREDIS_VER}*
+  && rm -rf redis-${PHPREDIS_VER}* \
+  && cd ${SRC_DIR}/ext/redis \
+  && phpize \
+  && ./configure --with-php-config=/usr/local/bin//php-config \
+  && make clean \
+  && make && make install \
+  && echo "extension=redis.so" > ${PHP_INI_DIR}/conf.d/docker-php-ext-redis.ini
 
-RUN set -ex ./usr/local/bin/docker-php-ext-install redis
+#RUN set -ex ./usr/local/bin/docker-php-ext-install redis
 
 RUN set -ex \
   && cd /usr/local/etc \
